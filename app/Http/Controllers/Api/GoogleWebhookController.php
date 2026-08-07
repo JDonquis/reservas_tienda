@@ -56,7 +56,10 @@ class GoogleWebhookController extends Controller
 
             // Si el evento fue eliminado en Google Calendar
             if ($event->getStatus() === 'cancelled') {
-                $appointment->delete(); // O cambiar estado a 'cancelled'
+                if ($appointment && $appointment->status !== 'cancelled') {
+                    $appointment->update([
+                        'status' => 'cancelled'
+                    ]);
                 continue;
             }
 
