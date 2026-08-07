@@ -14,5 +14,5 @@ Route::prefix('v1')->group(function () {
     // Rutas de Vinculación de Google Calendar
     Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
     Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
-    Route::post('/v1/google/webhook', [GoogleWebhookController::class, 'handleWebhook']);
+    Route::post('/google/webhook', [GoogleWebhookController::class, 'handleWebhook']);
 });
