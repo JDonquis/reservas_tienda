@@ -13,6 +13,7 @@ class Store extends Model
         'google_refresh_token',
         'google_calendar_id',
         'google_channel_id',
+        'allowed_domain',
     ];
 
     public function categories()
