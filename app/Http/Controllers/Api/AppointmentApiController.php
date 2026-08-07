@@ -110,6 +110,7 @@ class AppointmentApiController extends Controller
         // 3. Consultar las citas existentes en la DB o Google Calendar para descartar horas ocupadas
         $existingAppointments = $store->appointments()
             ->whereDate('start_time', $date)
+            ->where('status', '!=', 'cancelled')
             ->get();
 
         $availableSlots = array_filter($possibleSlots, function ($slot) use ($existingAppointments) {
@@ -126,6 +127,51 @@ class AppointmentApiController extends Controller
             'date' => $date,
             'slots' => array_values($availableSlots)
         ]);
+    }
+
+    public function cancelAppointment(Request $request, $id, GoogleCalendarService $calendarService)
+    {
+        $apiKey = $request->header('X-Store-Api-Key');
+
+        if (!$apiKey) {
+            return response()->json(['error' => 'API Key requerida'], 400);
+        }
+
+        $store = Store::where('api_key', $apiKey)->first();
+
+        if (!$store) {
+            return response()->json(['error' => 'Tienda no válida'], 404);
+        }
+
+        // 1. Buscar la cita de esta tienda específica
+        $appointment = $store->appointments()->where('id', $id)->first();
+
+        if (!$appointment) {
+            return response()->json(['error' => 'Cita no encontrada'], 404);
+        }
+
+        if ($appointment->status === 'cancelled') {
+            return response()->json(['message' => 'La cita ya se encuentra cancelada'], 200);
+        }
+
+        // 2. Eliminar el evento en Google Calendar si existe un ID de evento vinculado
+        if ($appointment->google_event_id) {
+            try {
+                $calendarService->deleteAppointmentEvent($store, $appointment->google_event_id);
+            } catch (\Exception $e) {
+                Log::error('Error al eliminar evento en Google Calendar: ' . $e->getMessage());
+            }
+        }
+
+        // 3. Actualizar estado en MySQL
+        $appointment->update([
+            'status' => 'cancelled',
+        ]);
+
+        return response()->json([
+            'message' => 'Cita cancelada exitosamente',
+            'appointment_id' => $appointment->id,
+        ], 200);
     }
 
 

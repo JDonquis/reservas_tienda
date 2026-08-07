@@ -10,6 +10,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/store/catalog', [StoreApiController::class, 'getCatalog']);
     Route::post('/store/appointments', [AppointmentApiController::class, 'createAppointment']);
     Route::get('/store/available-slots', [AppointmentApiController::class, 'getAvailableSlots']);
+    Route::delete('/store/appointments/{id}', [AppointmentApiController::class, 'cancelAppointment']);
 
     // Rutas de Vinculación de Google Calendar
     Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);

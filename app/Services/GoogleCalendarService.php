@@ -7,6 +7,7 @@ use Google\Service\Calendar;
 use Google\Service\Calendar\Event;
 use App\Models\Store;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class GoogleCalendarService
 {
@@ -57,5 +58,24 @@ class GoogleCalendarService
 
         $calendarId = $store->google_calendar_id ?? 'primary';
         return $service->events->insert($calendarId, $event);
+    }
+
+    public function deleteAppointmentEvent(Store $store, string $googleEventId): bool
+    {
+        if (!$store->google_refresh_token && !$store->google_access_token) {
+            return false;
+        }
+
+        $client = $this->getClient($store);
+        $service = new Calendar($client);
+
+        try {
+            $calendarId = $store->google_calendar_id ?? 'primary';
+            $service->events->delete($calendarId, $googleEventId);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Calendar Delete Error: ' . $e->getMessage());
+            return false;
+        }
     }
 }
