@@ -78,3 +78,4 @@ class GoogleWebhookController extends Controller
         return response()->json(['status' => 'success'], 200);
     }
 }
+}
