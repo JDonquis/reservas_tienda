@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('role')->default('client'); // 👈 Campo de rol ('superadmin', 'store_owner', 'client')
+            $table->string('google_id')->nullable();   // 👈 Recomendado si usas Socialite
+            $table->string('avatar')->nullable();      // 👈 Recomendado para guardar la foto de Google
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();    // Nullable por si solo entra por Google
             $table->rememberToken();
             $table->timestamps();
         });
