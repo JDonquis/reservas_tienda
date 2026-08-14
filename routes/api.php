@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
+    Route::get('/', function () {
+        return response()->json([
+            'message' => 'API de Reservas de Tienda - Versión 1',
+            'status' => 'success',
+        ]);
+    });
+
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
 
