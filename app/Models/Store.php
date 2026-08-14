@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Store extends Model
 {
     protected $fillable = [
+        'user_id',
         'name',
         'api_key',
         'google_access_token',
@@ -15,6 +17,11 @@ class Store extends Model
         'google_channel_id',
         'allowed_domain',
     ];
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function categories()
     {
@@ -34,5 +41,19 @@ class Store extends Model
     public function schedules()
     {
         return $this->hasMany(Schedule::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Store $store) {
+            if (empty($store->api_key)) {
+                $store->api_key = self::generateApiKey();
+            }
+        });
+    }
+
+    public static function generateApiKey(): string
+    {
+        return 'sk_'.Str::uuid();
     }
 }

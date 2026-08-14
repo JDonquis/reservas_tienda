@@ -1,11 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\StoreApiController;
+use App\Http\Controllers\Api\Admin\StoreController;
+use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AppointmentApiController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\GoogleWebhookController;
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\StoreApiController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
@@ -33,8 +35,22 @@ Route::prefix('v1')->group(function () {
             Route::get('/callback', [GoogleAuthController::class, 'callback']);
         });
 
-        // Aquí irán tus rutas administrativas del panel (Horarios, Productos, Citas, etc.)
-        // Route::apiResource('stores', StoreController::class);
+        // =====================================================================
+        // ADMINISTRACIÓN DEL PANEL: USUARIOS (solo superadmin)
+        // =====================================================================
+        Route::middleware('role:superadmin')->group(function () {
+            Route::apiResource('admin/users', UserController::class);
+        });
+
+        // =====================================================================
+        // ADMINISTRACIÓN DEL PANEL: TIENDAS (superadmin total; store_owner su tienda)
+        // =====================================================================
+        Route::get('admin/stores', [StoreController::class, 'index']);
+        Route::post('admin/stores', [StoreController::class, 'store'])->middleware('role:superadmin');
+        Route::get('admin/stores/{store}', [StoreController::class, 'show']);
+        Route::put('admin/stores/{store}', [StoreController::class, 'update']);
+        Route::delete('admin/stores/{store}', [StoreController::class, 'destroy'])->middleware('role:superadmin');
+        Route::post('admin/stores/{store}/regenerate-key', [StoreController::class, 'regenerateKey']);
     });
 
     // =========================================================================
