@@ -15,12 +15,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        return response()->json([
-            'status' => 'success',
-        ]);
-
-
-        $credentials = $request->validate([
+              $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
