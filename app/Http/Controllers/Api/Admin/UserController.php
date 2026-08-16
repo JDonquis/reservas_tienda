@@ -40,6 +40,8 @@ class UserController extends Controller
             $this->assignStore($user, $data);
         }
 
+        Log::info('Usuario creado: '.$user->email.' con rol: '.$user->role);
+
         $this->sendWelcomeMail($user, $password);
 
         return UserResource::make($user->load('store'));
