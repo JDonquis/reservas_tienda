@@ -19,7 +19,6 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'sometimes|required|string|max:255',
             'email' => ['sometimes', 'required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => 'nullable|string|min:8',
             'role' => 'sometimes|required|in:superadmin,store_owner',
             'store_id' => 'nullable|integer|exists:stores,id',
         ];
