@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Services\GoogleCalendarService;
+use App\Services\Payments\PaymentGatewayResolver;
 use App\Services\PaymentService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class AppointmentApiController extends Controller
 {
-    public function createAppointment(Request $request, GoogleCalendarService $calendarService, PaymentService $paymentService)
+    public function createAppointment(Request $request, GoogleCalendarService $calendarService, PaymentService $paymentService, PaymentGatewayResolver $resolver)
     {
         $apiKey = $request->header('X-Store-Api-Key');
 
@@ -43,13 +44,10 @@ class AppointmentApiController extends Controller
             }
         }
 
-        $paymentEnabled = $store->paymentSettings()
-            ->where('provider', 'mercadopago')
-            ->where('enabled', true)
-            ->exists();
+        $provider = $resolver->activeProviderFor($store);
 
         // Flujo con pago: la cita se crea pendiente y se redirige al checkout
-        if ($paymentEnabled) {
+        if ($provider) {
             if (! $service) {
                 return response()->json(['error' => 'Debes seleccionar un servicio para agendar'], 422);
             }
@@ -71,6 +69,7 @@ class AppointmentApiController extends Controller
                 (float) $service->price,
                 $store->currency,
                 'Cita: '.$service->name.' - '.$appointment->customer_name,
+                $provider,
             );
 
             if (! $checkoutUrl) {

@@ -15,6 +15,7 @@ class PaymentSetting extends Model
         'mode',
         'public_key',
         'secret_key',
+        'webhook_secret',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class PaymentSetting extends Model
             'enabled' => 'boolean',
             'public_key' => 'encrypted',
             'secret_key' => 'encrypted',
+            'webhook_secret' => 'encrypted',
         ];
     }
 

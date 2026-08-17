@@ -28,7 +28,9 @@ class StorePaymentSettingController extends Controller
                 'mode' => $setting->mode ?? 'sandbox',
                 'public_key' => $this->mask($setting->public_key ?? null),
                 'secret_key' => $this->mask($setting->secret_key ?? null),
+                'webhook_secret' => $this->mask($setting->webhook_secret ?? null),
                 'configured' => (bool) ($setting->secret_key ?? false),
+                'webhook_configured' => (bool) ($setting->webhook_secret ?? false),
             ];
         }
 
@@ -49,6 +51,7 @@ class StorePaymentSettingController extends Controller
             'providers.*.mode' => 'required|in:sandbox,live',
             'providers.*.public_key' => 'nullable|string',
             'providers.*.secret_key' => 'nullable|string',
+            'providers.*.webhook_secret' => 'nullable|string',
         ]);
 
         $store->update(['currency' => strtoupper($data['currency'])]);
@@ -68,6 +71,10 @@ class StorePaymentSettingController extends Controller
 
             if (! empty($config['secret_key'])) {
                 $setting->secret_key = $config['secret_key'];
+            }
+
+            if (! empty($config['webhook_secret'])) {
+                $setting->webhook_secret = $config['webhook_secret'];
             }
 
             $setting->save();

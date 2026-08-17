@@ -2,26 +2,26 @@
 
 namespace App\Services;
 
-use App\Contracts\Payments\PaymentGateway;
 use App\Mail\AppointmentConfirmationMail;
 use App\Models\Appointment;
 use App\Models\Payment;
 use App\Models\Store;
+use App\Services\Payments\PaymentGatewayResolver;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class PaymentService
 {
     public function __construct(
-        protected PaymentGateway $gateway,
+        protected PaymentGatewayResolver $resolver,
         protected GoogleCalendarService $calendarService,
     ) {}
 
-    public function startPayment(Store $store, $payable, float $amount, string $currency, string $description): ?string
+    public function startPayment(Store $store, $payable, float $amount, string $currency, string $description, string $provider): ?string
     {
         $payment = Payment::create([
             'store_id' => $store->id,
-            'provider' => 'mercadopago',
+            'provider' => $provider,
             'status' => 'pending',
             'amount' => $amount,
             'currency' => $currency,
@@ -29,12 +29,12 @@ class PaymentService
             'payable_id' => $payable->id,
         ]);
 
-        return $this->gateway->createCheckout($store, $payment, $description);
+        return $this->resolver->for($provider)->createCheckout($store, $payment, $description);
     }
 
-    public function resolveWebhook(Store $store, string $providerPaymentId): void
+    public function resolveWebhook(Store $store, string $providerPaymentId, string $provider): void
     {
-        $info = $this->gateway->resolvePayment($store, $providerPaymentId);
+        $info = $this->resolver->for($provider)->resolvePayment($store, $providerPaymentId);
 
         if (! $info || ! isset($info['external_reference'])) {
             return;
@@ -48,7 +48,7 @@ class PaymentService
 
         if ($info['status'] === 'approved') {
             $this->markPaid($payment);
-        } elseif (in_array($info['status'], ['rejected', 'cancelled', 'voided'])) {
+        } elseif (in_array($info['status'], ['rejected', 'cancelled', 'voided', 'unpaid'])) {
             $payment->update(['status' => 'failed']);
         }
     }

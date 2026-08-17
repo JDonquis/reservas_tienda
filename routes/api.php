@@ -102,4 +102,10 @@ Route::prefix('v1')->group(function () {
 
     Route::match(['get', 'post'], '/payments/mercadopago/webhook/{store}', [PaymentWebhookController::class, 'mercadopago'])
         ->name('payments.mercadopago.webhook');
+
+    Route::post('/payments/stripe/webhook/{store}', [PaymentWebhookController::class, 'stripe'])
+        ->name('payments.stripe.webhook');
+
+    Route::post('/payments/paypal/webhook/{store}', [PaymentWebhookController::class, 'paypal'])
+        ->name('payments.paypal.webhook');
 });
