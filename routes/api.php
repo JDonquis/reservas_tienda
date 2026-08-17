@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AppointmentController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ScheduleController;
@@ -71,6 +72,10 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('products', ProductController::class);
             Route::apiResource('services', ServiceController::class);
             Route::apiResource('schedules', ScheduleController::class);
+
+            Route::get('appointments', [AppointmentController::class, 'index']);
+            Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
+            Route::post('appointments/{appointment}/cancel', [AppointmentController::class, 'cancel']);
         });
     });
 
