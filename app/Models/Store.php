@@ -33,6 +33,11 @@ class Store extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function services()
+    {
+        return $this->hasMany(Service::class);
+    }
+
     public function appointments()
     {
         return $this->hasMany(Appointment::class);

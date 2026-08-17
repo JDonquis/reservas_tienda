@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Http\Controllers\Api\Admin\Concerns\AuthorizesStoreAccess;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreStoreRequest;
 use App\Http\Requests\UpdateStoreRequest;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class StoreController extends Controller
 {
+    use AuthorizesStoreAccess;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -65,12 +68,5 @@ class StoreController extends Controller
         $store->update(['api_key' => Store::generateApiKey()]);
 
         return StoreResource::make($store->load('owner'));
-    }
-
-    protected function authorizeStore($user, Store $store): void
-    {
-        if ($user->role !== 'superadmin' && $store->user_id !== $user->id) {
-            abort(403, 'No tienes permisos sobre esta tienda.');
-        }
     }
 }

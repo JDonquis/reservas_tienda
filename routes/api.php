@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\ProductController;
+use App\Http\Controllers\Api\Admin\ServiceController;
 use App\Http\Controllers\Api\Admin\StoreController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AppointmentApiController;
@@ -58,6 +61,15 @@ Route::prefix('v1')->group(function () {
         Route::put('admin/stores/{store}', [StoreController::class, 'update']);
         Route::delete('admin/stores/{store}', [StoreController::class, 'destroy'])->middleware('role:superadmin');
         Route::post('admin/stores/{store}/regenerate-key', [StoreController::class, 'regenerateKey']);
+
+        // =====================================================================
+        // ADMINISTRACIÓN DEL PANEL: CATÁLOGO (Categorías, Productos y Servicios)
+        // =====================================================================
+        Route::prefix('admin/stores/{store}')->group(function () {
+            Route::apiResource('categories', CategoryController::class);
+            Route::apiResource('products', ProductController::class);
+            Route::apiResource('services', ServiceController::class);
+        });
     });
 
     // =========================================================================
