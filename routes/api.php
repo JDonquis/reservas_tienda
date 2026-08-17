@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ProductController;
+use App\Http\Controllers\Api\Admin\ScheduleController;
 use App\Http\Controllers\Api\Admin\ServiceController;
 use App\Http\Controllers\Api\Admin\StoreController;
 use App\Http\Controllers\Api\Admin\UserController;
@@ -69,6 +70,7 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('categories', CategoryController::class);
             Route::apiResource('products', ProductController::class);
             Route::apiResource('services', ServiceController::class);
+            Route::apiResource('schedules', ScheduleController::class);
         });
     });
 
