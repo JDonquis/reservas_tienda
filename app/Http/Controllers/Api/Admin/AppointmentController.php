@@ -20,6 +20,7 @@ class AppointmentController extends Controller
         $this->authorizeStore($request->user(), $store);
 
         $appointments = $store->appointments()
+            ->with('service')
             ->when($request->query('date'), fn ($q, $date) => $q->whereDate('start_time', $date))
             ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
             ->when($request->query('q'), function ($q, $search) {
@@ -40,7 +41,7 @@ class AppointmentController extends Controller
         $this->authorizeStore($request->user(), $store);
         $this->ensureBelongsToStore($store, $appointment);
 
-        return AppointmentResource::make($appointment);
+        return AppointmentResource::make($appointment->load('service'));
     }
 
     public function cancel(Request $request, Store $store, Appointment $appointment, GoogleCalendarService $calendarService)

@@ -26,4 +26,9 @@ class Service extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
 }

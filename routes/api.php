@@ -6,11 +6,13 @@ use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ScheduleController;
 use App\Http\Controllers\Api\Admin\ServiceController;
 use App\Http\Controllers\Api\Admin\StoreController;
+use App\Http\Controllers\Api\Admin\StorePaymentSettingController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AppointmentApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\GoogleWebhookController;
+use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\StoreApiController;
 use Illuminate\Support\Facades\Route;
 
@@ -76,6 +78,9 @@ Route::prefix('v1')->group(function () {
             Route::get('appointments', [AppointmentController::class, 'index']);
             Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
             Route::post('appointments/{appointment}/cancel', [AppointmentController::class, 'cancel']);
+
+            Route::get('payment-settings', [StorePaymentSettingController::class, 'index']);
+            Route::put('payment-settings', [StorePaymentSettingController::class, 'update']);
         });
     });
 
@@ -84,6 +89,7 @@ Route::prefix('v1')->group(function () {
     // =========================================================================
     Route::middleware(['validate.store.domain'])->prefix('store')->group(function () {
         Route::get('/catalog', [StoreApiController::class, 'getCatalog']);
+        Route::get('/services', [StoreApiController::class, 'getServices']);
         Route::get('/available-slots', [AppointmentApiController::class, 'getAvailableSlots']);
         Route::post('/appointments', [AppointmentApiController::class, 'createAppointment']);
         Route::delete('/appointments/{id}', [AppointmentApiController::class, 'cancelAppointment']);
@@ -93,4 +99,7 @@ Route::prefix('v1')->group(function () {
     // 4. WEBHOOKS Y CALLBACKS EXTERNOS (Sin Sanctum, llamados por servidores)
     // =========================================================================
     Route::post('/google/webhook', [GoogleWebhookController::class, 'handleWebhook']);
+
+    Route::match(['get', 'post'], '/payments/mercadopago/webhook/{store}', [PaymentWebhookController::class, 'mercadopago'])
+        ->name('payments.mercadopago.webhook');
 });

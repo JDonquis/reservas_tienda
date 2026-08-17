@@ -16,6 +16,7 @@ class Store extends Model
         'google_calendar_id',
         'google_channel_id',
         'allowed_domain',
+        'currency',
     ];
 
     public function owner()
@@ -36,6 +37,11 @@ class Store extends Model
     public function services()
     {
         return $this->hasMany(Service::class);
+    }
+
+    public function paymentSettings()
+    {
+        return $this->hasMany(PaymentSetting::class);
     }
 
     public function appointments()

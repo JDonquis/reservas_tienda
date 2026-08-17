@@ -53,12 +53,13 @@
         }
     }
 
-    // 2. Renderizar Formulario de Citas con Horarios Dinámicos
+    // 2. Renderizar Formulario de Citas con Horarios Dinámicos y Servicios
     function renderBookingForm(targetSelector) {
         const container = document.querySelector(targetSelector);
         if (!container) return;
 
         let selectedSlot = null;
+        let hasServices = false;
 
         container.innerHTML = `
             <div class="reserva-form-container" style="border:1px solid #cbd5e0; padding:20px; border-radius:8px; max-width:420px; font-family:sans-serif;">
@@ -75,6 +76,13 @@
                     <div style="margin-bottom:10px;">
                         <label style="display:block; font-size:0.85em; font-weight:bold;">Teléfono / WhatsApp:</label>
                         <input type="text" id="reserva_phone" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                    </div>
+
+                    <div id="reserva_service_wrapper" style="margin-bottom:10px;">
+                        <label style="display:block; font-size:0.85em; font-weight:bold;">Servicio:</label>
+                        <select id="reserva_service" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                            <option value="">Selecciona un servicio</option>
+                        </select>
                     </div>
 
                     <div style="margin-bottom:10px;">
@@ -96,24 +104,47 @@
         `;
 
         const dateInput = document.getElementById('reserva_date');
+        const serviceSelect = document.getElementById('reserva_service');
+        const serviceWrapper = document.getElementById('reserva_service_wrapper');
         const slotsContainer = document.getElementById('reserva_slots_container');
         const submitBtn = document.getElementById('reserva_btn_submit');
         const form = document.getElementById('reserva-booking-form');
 
-        // Escuchar cambio de fecha para consultar horarios disponibles
-        dateInput.addEventListener('change', async (e) => {
-            const chosenDate = e.target.value;
-            selectedSlot = null;
-            submitBtn.disabled = true;
-            submitBtn.style.background = '#a0aec0';
-            submitBtn.style.cursor = 'not-allowed';
+        function canSubmit() {
+            return !!selectedSlot && (!hasServices || !!serviceSelect.value);
+        }
 
-            if (!chosenDate) return;
+        function updateSubmit() {
+            if (canSubmit()) {
+                submitBtn.disabled = false;
+                submitBtn.style.background = '#38a169';
+                submitBtn.style.cursor = 'pointer';
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.style.background = '#a0aec0';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+        }
+
+        async function loadSlots() {
+            const chosenDate = dateInput.value;
+            selectedSlot = null;
+            updateSubmit();
+
+            if (!chosenDate) {
+                slotsContainer.innerHTML = '<span style="font-size:0.85em; color:#718096;">Selecciona una fecha para ver los horarios.</span>';
+                return;
+            }
 
             slotsContainer.innerHTML = '<span style="font-size:0.85em; color:#3182ce;">Consultando disponibilidad...</span>';
 
+            let url = `${apiBaseUrl}/available-slots?date=${chosenDate}`;
+            if (serviceSelect.value) {
+                url += `&service_id=${serviceSelect.value}`;
+            }
+
             try {
-                const response = await fetch(`${apiBaseUrl}/available-slots?date=${chosenDate}`, {
+                const response = await fetch(url, {
                     headers: { 'X-Store-Api-Key': apiKey }
                 });
 
@@ -132,21 +163,15 @@
                     btn.style.cssText = 'padding:6px 12px; border:1px solid #3182ce; background:white; color:#3182ce; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.85em;';
 
                     btn.addEventListener('click', () => {
-                        // Desmarcar otros botones
                         Array.from(slotsContainer.children).forEach(child => {
                             child.style.background = 'white';
                             child.style.color = '#3182ce';
                         });
 
-                        // Marcar botón activo
                         btn.style.background = '#3182ce';
                         btn.style.color = 'white';
                         selectedSlot = slot;
-
-                        // Habilitar botón de confirmación
-                        submitBtn.disabled = false;
-                        submitBtn.style.background = '#38a169';
-                        submitBtn.style.cursor = 'pointer';
+                        updateSubmit();
                     });
 
                     slotsContainer.appendChild(btn);
@@ -156,12 +181,44 @@
                 console.error('Error al consultar slots:', err);
                 slotsContainer.innerHTML = '<span style="font-size:0.85em; color:#e53e3e;">Error al cargar disponibilidad.</span>';
             }
-        });
+        }
+
+        // Cargar servicios disponibles (si los hay)
+        (async () => {
+            try {
+                const response = await fetch(`${apiBaseUrl}/services`, {
+                    headers: { 'X-Store-Api-Key': apiKey }
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const services = data.services || [];
+                hasServices = services.length > 0;
+
+                if (hasServices) {
+                    services.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.innerText = s.duration_minutes ? `${s.name} (${s.duration_minutes} min)` : s.name;
+                        serviceSelect.appendChild(opt);
+                    });
+                } else {
+                    serviceWrapper.style.display = 'none';
+                }
+            } catch (err) {
+                serviceWrapper.style.display = 'none';
+                hasServices = false;
+            }
+        })();
+
+        dateInput.addEventListener('change', loadSlots);
+        serviceSelect.addEventListener('change', loadSlots);
 
         // Enviar formulario
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!selectedSlot) return;
+            if (!canSubmit()) return;
 
             const statusDiv = document.getElementById('reserva-status-message');
             statusDiv.style.color = '#3182ce';
@@ -174,6 +231,10 @@
                 start_time: selectedSlot.start,
                 end_time: selectedSlot.end,
             };
+
+            if (serviceSelect.value) {
+                payload.service_id = serviceSelect.value;
+            }
 
             try {
                 const response = await fetch(`${apiBaseUrl}/appointments`, {
@@ -188,14 +249,17 @@
                 const result = await response.json();
 
                 if (response.ok) {
+                    if (result.checkout_url) {
+                        window.location.href = result.checkout_url;
+                        return;
+                    }
+
                     statusDiv.style.color = '#38a169';
                     statusDiv.innerHTML = '¡Reserva confirmada con éxito!';
                     form.reset();
                     slotsContainer.innerHTML = '<span style="font-size:0.85em; color:#718096;">Selecciona una fecha para ver los horarios.</span>';
-                    submitBtn.disabled = true;
-                    submitBtn.style.background = '#a0aec0';
-                    submitBtn.style.cursor = 'not-allowed';
                     selectedSlot = null;
+                    updateSubmit();
                 } else {
                     statusDiv.style.color = '#e53e3e';
                     statusDiv.innerHTML = result.error || 'Error al procesar la reserva.';
