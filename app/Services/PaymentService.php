@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Mail\AppointmentConfirmationMail;
+use App\Mail\OrderConfirmationMail;
+use App\Mail\OrderReceivedMail;
 use App\Models\Appointment;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Store;
 use App\Services\Payments\PaymentGatewayResolver;
@@ -66,6 +69,40 @@ class PaymentService
         if ($payable instanceof Appointment) {
             $this->finalizeAppointment($payment->store, $payable);
         }
+
+        if ($payable instanceof Order) {
+            $this->finalizeOrder($payment->store, $payable);
+        }
+    }
+
+    public function sendOrderEmails(Store $store, Order $order): void
+    {
+        $owner = $store->owner;
+
+        try {
+            if ($owner) {
+                Mail::to($owner->email)->send(new OrderReceivedMail($store, $order));
+            }
+        } catch (\Exception $e) {
+            Log::error('Error enviando pedido al dueño: '.$e->getMessage());
+        }
+
+        try {
+            Mail::to($order->customer_email)->send(new OrderConfirmationMail($store, $order));
+        } catch (\Exception $e) {
+            Log::error('Error enviando confirmación al cliente: '.$e->getMessage());
+        }
+    }
+
+    protected function finalizeOrder(Store $store, Order $order): void
+    {
+        $order->update([
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        $this->sendOrderEmails($store, $order->load('items'));
     }
 
     protected function finalizeAppointment(Store $store, Appointment $appointment): void

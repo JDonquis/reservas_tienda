@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\AppointmentController;
 use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\OrderController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ScheduleController;
 use App\Http\Controllers\Api\Admin\ServiceController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\AppointmentApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\GoogleWebhookController;
+use App\Http\Controllers\Api\OrderApiController;
 use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\StoreApiController;
 use Illuminate\Support\Facades\Route;
@@ -79,6 +81,10 @@ Route::prefix('v1')->group(function () {
             Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
             Route::post('appointments/{appointment}/cancel', [AppointmentController::class, 'cancel']);
 
+            Route::get('orders', [OrderController::class, 'index']);
+            Route::get('orders/{order}', [OrderController::class, 'show']);
+            Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
+
             Route::get('payment-settings', [StorePaymentSettingController::class, 'index']);
             Route::put('payment-settings', [StorePaymentSettingController::class, 'update']);
         });
@@ -93,6 +99,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/available-slots', [AppointmentApiController::class, 'getAvailableSlots']);
         Route::post('/appointments', [AppointmentApiController::class, 'createAppointment']);
         Route::delete('/appointments/{id}', [AppointmentApiController::class, 'cancelAppointment']);
+        Route::post('/orders', [OrderApiController::class, 'createOrder']);
     });
 
     // =========================================================================
